@@ -6,7 +6,7 @@
 /*   By: hamrachi <hamrachi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/15 22:02:28 by hamrachi          #+#    #+#             */
-/*   Updated: 2024/11/26 07:38:29 by hamrachi         ###   ########.fr       */
+/*   Updated: 2024/12/14 18:39:42 by hamrachi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,47 +32,55 @@ int ft_check_argc(int ac , char **av)
 	return(1);
 }
 
-int ft_atoi(char *str)
+long	ft_atoi(char *str)
 {
-	int	r;
-	int	i;
-	int	j;
+	long	n;
+	int		i;
+	int		sign;
 
 	i = 0;
-	r = 0;
-	j = 0;
-	while(str[i] != '\0')
+	n = 0;
+	sign = 1;
+	while ((str[i] == ' ' || str[i] == '\t') && str[i])
+		i++;
+	if (str[i] == '-' || str[i] == '+')
 	{
-		r = r * 10 + (str[i] - 48);
-		if (r > 2147483647)
-				return(-1);
+		if (str[i] == '-')
+			sign = -1;
 		i++;
 	}
-	return (r);
+	while (str[i] && str[i] >= '0' && str[i] <= '9')
+	{
+		n = (n * 10) + str[i] - '0';
+		i++;
+	}
+	return (n * sign);
 }
 
 int ft_check_rules(int ac, char **av, t_data *data)
 {
-	data->num_philos = ft_atoi(av[1]);
-	printf("atoi 1 == %d\n", ft_atoi(av[1]));
+	data->num_philos = ft_atoi(av[1]);//TODO overflow
+    if(data->num_philos > 200)
+        return(0); 
 	data->time_to_die = ft_atoi(av[2]);
-	printf("atoi 2 == %d\n", ft_atoi(av[2]));
 	data->time_to_eat = ft_atoi(av[3]);
-	printf("atoi 3 == %d\n", ft_atoi(av[3]));
 	data->time_to_sleep = ft_atoi(av[4]);
-	printf("atoi 4 == %d\n", ft_atoi(av[4]));
 	data->must_eat = -1;
 	if (ac == 6)
 	{
 		data->must_eat = ft_atoi(av[5]);
-		printf("atoi 5 == %d\n", ft_atoi(av[5]));
+		printf("atoi 5 == %ld\n", ft_atoi(av[5]));
+        if (data-> must_eat < 1)
+            return(0);
 	}
+    else
+        data-> must_eat = -1;
 	if (data->num_philos <= 0 || data->time_to_die <= 0 ||
-		data->time_to_eat <= 0 || data->time_to_sleep <= 0 ||
-		(ac == 6 && data->must_eat <= 0))
+		data->time_to_eat <= 0 || data->time_to_sleep <= 0)
 		return (0);
 	return (1);
 }
+
 long long	geting_time(void)
 {
 	struct timeval	t;
@@ -102,35 +110,38 @@ int	ft_init(t_data *data)
 	}
 	if(pthread_mutex_init(&data->print, NULL) != 0)
 		return(0);
-	if(pthread_mutex_init(&data->death, NULL) != 0)
+	if(pthread_mutex_init(&data->death_mutex, NULL) != 0)
 		return(0);
+    if(pthread_mutex_init(&data->last_meal_mutex, NULL) != 0)
+		return(0);
+    if(pthread_mutex_init(&data->num_of_meal_mutex, NULL) != 0)
+		return(0);
+    data->start_time = geting_time();  // Record start time
 	i = 0;
 	while(i < data->num_philos)
 	{
 		data->philosophers[i].id = (i + 1);
 		data->philosophers[i].left_fork = i;
 		data->philosophers[i].right_fork = (i + 1) % data->num_philos;
-		data->philosophers[i].last_meal = geting_time();
+		data->philosophers[i].last_meal = data->start_time;
 		data->philosophers[i].meals_eaten = 0;
-		data->philosophers[i].is_eating = 0;
 		data->philosophers[i].data = data;
 		i++;
 	}
 	// 6. Initialize simulation status
-    data->someone_died = 0;   // No one is dead at start
-    data->start_time = geting_time();  // Record start time
+    data->death = 0;   // No one is dead at start
 	return(1);
 }
 
 int    check_death(t_philo *philo)
 {
-    pthread_mutex_lock(&philo->data->death);
-    if (philo->data->someone_died)
+    pthread_mutex_lock(&philo->data->death_mutex);
+    if (philo->data->death)
     {
-        pthread_mutex_unlock(&philo->data->death);
+        pthread_mutex_unlock(&philo->data->death_mutex);
         return (1);
     }
-    pthread_mutex_unlock(&philo->data->death);
+    pthread_mutex_unlock(&philo->data->death_mutex);
     return (0);
 }
 
@@ -175,61 +186,84 @@ void cleanup(t_data *data)
     free(data);
 }
 
-void    *philosopher_routine(void *arg)
+
+ void  sleeping_philo(t_philo *philo, long long milisecond)
+ {
+    long long start;
+
+    start = geting_time();
+    while(1)
+    {
+        pthread_mutex_lock(&philo->data->death_mutex);
+        if(philo->data->death || geting_time() - start >= milisecond)
+        {
+           pthread_mutex_unlock(&philo->data->death_mutex);
+            break;
+        }
+        pthread_mutex_unlock(&philo->data->death_mutex);
+        usleep(100);
+    }
+ }
+
+   void *philosopher_routine(void *arg)
 {
     t_philo *philo;
-    
+
     philo = (t_philo *)arg;
+
     // Stagger philosopher start times to prevent deadlock
     if (philo->id % 2 == 0)
-        usleep(philo->data -> time_to_eat);
+        usleep(700); // Staggered start for even philosophers
 
-    while (!check_death(philo))
+    while (!check_death(philo)) // Continue until a death is detected
     {
+        // Check if the philosopher has eaten enough or if the simulation should end
+        pthread_mutex_lock(&philo->data->death_mutex);
+        if (philo->meals_eaten == philo->data->must_eat || philo->data->death)
+        {
+            pthread_mutex_unlock(&philo->data->death_mutex);
+            break;
+        }
+        pthread_mutex_unlock(&philo->data->death_mutex);
+
         // Taking forks
         pthread_mutex_lock(&philo->data->forks[philo->left_fork]);
         print_status(philo, "has taken a fork");
         pthread_mutex_lock(&philo->data->forks[philo->right_fork]);
         print_status(philo, "has taken a fork");
-        
-        // Eating
-        pthread_mutex_lock(&philo->data->death);
-        philo->is_eating = 1;
-        philo->last_meal = geting_time();
-        pthread_mutex_unlock(&philo->data->death);
-        
         print_status(philo, "is eating");
-        usleep(philo->data->time_to_eat * 1000);
-        
-        pthread_mutex_lock(&philo->data->death);
-        philo->is_eating = 0;
+        sleeping_philo(philo,philo->data->time_to_eat);
+        // Update meals eaten
+        pthread_mutex_lock(&philo->data->num_of_meal_mutex);
         philo->meals_eaten++;
-        pthread_mutex_unlock(&philo->data->death);
-        
+        pthread_mutex_unlock(&philo->data->num_of_meal_mutex);
+
         // Releasing forks
         pthread_mutex_unlock(&philo->data->forks[philo->left_fork]);
         pthread_mutex_unlock(&philo->data->forks[philo->right_fork]);
-        
-        // Check if philosopher has eaten enough
-        if (philo->data->must_eat != -1 && 
-            philo->meals_eaten >= philo->data->must_eat)
-            break;
-            
+
         // Sleeping
         print_status(philo, "is sleeping");
-        usleep(philo->data->time_to_sleep * 1000);
-        
+        sleeping_philo(philo, philo->data->time_to_sleep);
+
         // Thinking
         print_status(philo, "is thinking");
+        usleep(300); // Short sleep to avoid busy waiting
     }
     return (NULL);
 }
+
 
 int create_philosophers(t_data *data)
 {
     int i;
 
     i = 0;
+    if(data -> num_philos == 1)
+    {
+        //TODO sawb lih statu , sleep ,
+        return(0);
+    }
     while (i < data->num_philos)
     {
         if (pthread_create(&data->philosophers[i].thread, NULL, 
@@ -295,7 +329,10 @@ int main(int ac, char **av)
 {
 	t_data *data;
 	if (ac > 6 || ac < 5)
-		return (0);
+	{
+       printf("Error: Invalid number of arguments. ");
+        return (0);
+    }
 	data = malloc(sizeof(t_data));
 	if (!data)
 		return(0);
