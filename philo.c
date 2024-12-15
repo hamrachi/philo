@@ -6,12 +6,12 @@
 /*   By: hamrachi <hamrachi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/15 22:02:28 by hamrachi          #+#    #+#             */
-/*   Updated: 2024/12/15 18:17:32 by hamrachi         ###   ########.fr       */
+/*   Updated: 2024/12/15 19:40:45 by hamrachi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
-
+#include <stdlib.h>
 int ft_check_argc(int ac , char **av)
 {
 	int i;
@@ -158,33 +158,35 @@ void    print_status(t_philo *philo, char *str)
     pthread_mutex_unlock(&philo->data->print);
 }
 
-// void cleanup(t_data *data)
-// {
-//     int i;
+void cleanup(t_data *data)
+{
+    int i;
 
-//     // Wait for all philosopher threads to finish
-//     i = 0;
-//     while (i < data->num_philos)
-//     {
-//         pthread_join(data->philosophers[i].thread, NULL);
-//         i++;
-//     }
+    // Wait for all philosopher threads to finish
+    i = 0;
+    while (i < data->num_philos)
+    {
+        pthread_join(data->philosophers[i].thread, NULL);
+        i++;
+    }
 
-//     // Destroy mutexes
-//     i = 0;
-//     while (i < data->num_philos)
-//     {
-//         pthread_mutex_destroy(&data->forks[i]);
-//         i++;
-//     }
-//     pthread_mutex_destroy(&data->print);
-//     pthread_mutex_destroy(&data->death);
+    // Destroy mutexes
+    i = 0;
+    while (i < data->num_philos)
+    {
+        pthread_mutex_destroy(&data->forks[i]);
+        i++;
+    }
+    pthread_mutex_destroy(&data->print);
+    // pthread_mutex_destroy(death_mutex);
+    pthread_mutex_destroy(&data -> last_meal_mutex);
+    pthread_mutex_destroy(&data -> num_of_meal_mutex);
 
-//     // Free allocated memory
-//     free(data->forks);
-//     free(data->philosophers);
-//     free(data);
-// }
+    // Free allocated memory
+    free(data->forks);
+    free(data->philosophers);
+    free(data);
+}
 
 
  void  sleeping_philo(t_philo *philo, long long milisecond)
@@ -215,14 +217,14 @@ void    print_status(t_philo *philo, char *str)
     if (philo->id % 2 != 0)
     {
         print_status(philo, "is thinking");
-        usleep(700); // Staggered start for even philosophers
+        usleep(philo->data->time_to_eat / 2 * 1000 ); // Staggered start for even philosophers
     }
     while (!check_death(philo)) // Continue until a death is detected
     {
         // Taking forks
         pthread_mutex_lock(&philo->data->forks[philo->left_fork]);
         print_status(philo, "has taken a fork");
-        if(philo->left_fork== philo->right_fork)
+        if(philo->left_fork == philo->right_fork)
             return(pthread_mutex_unlock(&philo->data->forks[philo->left_fork]),NULL);
         pthread_mutex_lock(&philo->data->forks[philo->right_fork]);
         print_status(philo, "has taken a fork");
@@ -364,8 +366,13 @@ int create_philosophers(t_data *data)
 //     return (1);
 // }
 
+void f()
+{
+    system("leaks philo");
+}
 int main(int ac, char **av)
 {
+    atexit(f);
 	t_data *data;
 	if (ac > 6 || ac < 5)
 	{
@@ -381,9 +388,10 @@ int main(int ac, char **av)
         return (printf("Error: Initialization failed\n"), free(data), 0);
 	if (!create_philosophers(data))
     {
-        //cleanup(data);
+        // cleanup(data);
         return (printf("Error: Thread creation failed\n"), 0);
     }
+    // destroy_all(data);
 
 	//  if (!create_monitors(data))
     // {
@@ -412,6 +420,6 @@ int main(int ac, char **av)
     // }
     
     // // Clean up and exit
-    // cleanup(data);
+    cleanup(data);
 	
 }

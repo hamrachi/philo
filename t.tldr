@@ -42758,7 +42758,7 @@
 			"props": {
 				"segments": [
 					{
-						"type": "free",
+						"type": "",
 						"points": [
 							{
 								"x": 0,
