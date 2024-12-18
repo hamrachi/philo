@@ -6,7 +6,7 @@
 /*   By: hamrachi <hamrachi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/15 23:52:07 by hamrachi          #+#    #+#             */
-/*   Updated: 2024/12/14 18:35:07 by hamrachi         ###   ########.fr       */
+/*   Updated: 2024/12/17 23:29:50 by hamrachi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 # include <stdlib.h>
 # include <pthread.h>
 # include <sys/time.h>
+# include <limits.h>
 
 
 typedef struct s_philo_tab

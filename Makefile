@@ -1,7 +1,6 @@
 NAME = philo
 
-CFLAGS =  -Wall -Wextra -Werror  
-
+CFLAGS =  -Wall -Wextra -Werror #-fsanitize=thread -g
 SRC = philo.c
 
 OBJM = $(SRC:%.c=%.o)
