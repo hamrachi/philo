@@ -1,10 +1,10 @@
 NAME = philo
 
-CFLAGS =  -Wall -Wextra -Werror #-fsanitize=thread -g
-SRC = philo.c
+CFLAGS =  -Wall -Wextra -Werror
+
+SRC = philo.c parse.c initial.c tools.c routine.c
 
 OBJM = $(SRC:%.c=%.o)
-
 
 all : $(NAME)
 
