@@ -6,7 +6,7 @@
 /*   By: hamrachi <hamrachi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/15 22:02:28 by hamrachi          #+#    #+#             */
-/*   Updated: 2024/12/20 23:39:24 by hamrachi         ###   ########.fr       */
+/*   Updated: 2024/12/21 00:16:13 by hamrachi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,6 @@ int	main(int ac, char **av)
 	if (!ft_init(data))
 		return (printf("Error: Initialization failed\n"), free(data), 0);
 	if (!create_philosophers(data))
-		return (printf("Error: Thread creation failed\n"), 0);
+		return (printf("Error: Thread creation failed\n"), cleanup(data), 0);
 	cleanup(data);
 }

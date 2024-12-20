@@ -6,7 +6,7 @@
 /*   By: hamrachi <hamrachi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/15 23:52:07 by hamrachi          #+#    #+#             */
-/*   Updated: 2024/12/20 23:39:32 by hamrachi         ###   ########.fr       */
+/*   Updated: 2024/12/21 00:14:12 by hamrachi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,28 +22,28 @@
 
 typedef struct s_philo_tab
 {
-	int				id;// Unique number for each philosopher (1 to n)
-	int				left_fork;// Index of left fork
-	int				right_fork;// Index of right fork
-	long long		last_meal;// Timestamp of last meal (to check death)
-	int				meals_eaten;// Counter for number of meals eaten
-	struct s_data	*data;// Pointer to shared data structure
-	pthread_t		thread;// Thread identifier for this philosopher
+	int				id;
+	int				left_fork;
+	int				right_fork;
+	long long		last_meal;
+	int				meals_eaten;
+	struct s_data	*data;
+	pthread_t		thread;
 }	t_philo;
 
 typedef struct s_data
 {
-	int				num_philos;// Total number of philosophers (from args)
-	int				time_to_die;// Time limit without eating (from args)
-	int				time_to_eat;// Time it takes to eat (from args)
-	int				time_to_sleep;// Time it takes to sleep (from args)
-	int				must_eat;// Number of times each must eat (optional arg)
-	int				death;// Flag to stop simulation if someone dies
-	long long		start_time;// Timestamp when simulation starts
-	pthread_mutex_t	*forks;// Array of mutexes for forks
-	pthread_mutex_t	print;// Mutex for printing (prevent scrambled output)
-	pthread_mutex_t	death_mutex;// Mutex for checking/setting death status
-	t_philo			*philosophers;// Array of philosopher structures
+	int				num_philos;
+	int				time_to_die;
+	int				time_to_eat;
+	int				time_to_sleep;
+	int				must_eat;
+	int				death;
+	long long		start_time;
+	pthread_mutex_t	*forks;
+	pthread_mutex_t	print;
+	pthread_mutex_t	death_mutex;
+	t_philo			*philosophers;
 }	t_data;
 
 int			ft_check_argc(int ac, char **av);
